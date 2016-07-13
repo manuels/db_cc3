@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>cc3_2.py</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>cc3_2.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      <p>Here we calculate the 3-term connection coefficients</p>
+<p>
+<script type="math/tex; mode=display">
+Λ_{l,m}^{d,e} = ∫_{-∞}^∞ φ(x) φ^{(d)}_l(x) φ^{(e)}_m(x) dx
+</script>
+</p>
+<p>with
+<script type="math/tex; mode=display">
+    -(N-1) < l < N-1, \\
+    -(N-1) < m < N-1, \\
+    -(N-1) < l-m < N-1.
+</script>
+</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.misc</span> <span class="k">import</span> <span class="n">factorial</span>
+
+<span class="kn">from</span> <span class="nn">moments</span> <span class="k">import</span> <span class="n">moment</span>
+<span class="kn">from</span> <span class="nn">scaling_coefficients</span> <span class="k">import</span> <span class="n">db3</span><span class="p">,</span> <span class="n">daubechies_wavelets</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <h2>Restriction to Fundamental Connection Coefficients</h2>
+<p><a name="fundamental_cc"></a></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">threeterm_connection_coefficients</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">d3</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>The 3-term connection coefficients are defined as
+<script type="math/tex; mode=display">
+Λ_{i,j,k}^{d_1,d_2,d_3} = ∫^∞_{-∞} \frac{d^{d_1}}{dx^{d_1}} φ_i(x) \frac{d^{d_2}}{dx^{d_2}} φ_j(x) \frac{d^{d_3}}{dx^{d_3}} φ_k(x) dx
+</script>
+which can be transformed by a change of variables with <script type="math/tex">l=j-i</script> and <script type="math/tex">m=k-i</script> to
+<script type="math/tex; mode=display">\begin{align}
+=& ∫^∞_{-∞} φ^{(d_1)}(x-i) φ^{(d_2)}(x-j) φ^{(d_2)}(x-k) dx \\
+=& ∫^∞_{-∞} φ^{(d_1)}(x) φ^{(d_2)}_l(x) φ^{(d_2)}_m(x) dx \\
+=& Λ_{l,m}^{d_1,d_2,d_3}.
+\end{align}</script>
+</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="k">if</span> <span class="n">d1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">idx</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">Λ</span> <span class="o">=</span> <span class="n">fundamental_threeterm_connection_coefficients</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">d3</span><span class="p">)</span>
+        <span class="n">idx2</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">:</span> <span class="n">idx</span><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">idx2</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">Λ</span>
+    <span class="k">else</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Using integration by parts we can focus on the case <script type="math/tex">d_1=0</script>
+</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>        <span class="n">idx1</span><span class="p">,</span> <span class="n">indices1</span><span class="p">,</span> <span class="n">Λ1</span> <span class="o">=</span> <span class="n">threeterm_connection_coefficients</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d1</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">d2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">d3</span><span class="p">)</span>
+        <span class="n">idx2</span><span class="p">,</span> <span class="n">indices2</span><span class="p">,</span> <span class="n">Λ2</span> <span class="o">=</span> <span class="n">threeterm_connection_coefficients</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d1</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">d3</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">indices1</span> <span class="o">==</span> <span class="n">indices2</span>
+        <span class="k">return</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">indices1</span><span class="p">,</span> <span class="o">-</span><span class="n">Λ1</span> <span class="o">-</span> <span class="n">Λ2</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <h1>Calculation of Fundamental Connection Coefficients</h1>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">fundamental_threeterm_connection_coefficients</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">d3</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Our wavelet has <script type="math/tex">N=2g</script> non-zero scaling coefficients where <script type="math/tex">g</script> is the genus.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">N</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">size</span> 
+    <span class="n">aindices</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">d1</span> <span class="o">+</span> <span class="n">d2</span> <span class="o">+</span> <span class="n">d3</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>The fundamental connection coefficients <script type="math/tex">Λ_{l,m}^{d_1,d_2,d_3}</script> are just non-zero for
+<script type="math/tex; mode=display">
+-(N-1) < l < N-1, \\
+-(N-1) < m < N-1, \\
+-(N-1) < l-m < N-1.
+</script>
+</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">Tindices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">((</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span><span class="n">m</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                      <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">l</span><span class="o">-</span><span class="n">m</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">)))</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">:</span> <span class="n">Tindices</span><span class="o">.</span><span class="n">index</span><span class="p">((</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">))</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">N</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">9</span><span class="o">*</span><span class="n">N</span> <span class="o">+</span> <span class="mi">7</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>The Daubechies wavelet of genus <script type="math/tex">g=N/2</script> has just as many vanishing moments and
+we must not calculate higher derivatives than <script type="math/tex">d < g</script>!</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">([</span><span class="n">d1</span><span class="p">,</span><span class="n">d2</span><span class="p">,</span><span class="n">d3</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;Calculation of connection coefficients for {},{},{} &gt; g = N/2 is invalid!&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span><span class="n">d2</span><span class="p">,</span><span class="n">d3</span><span class="p">)</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <h2>Consequences of Compactness</h2>
+<p>We exploit the fact that
+<script type="math/tex; mode=display">
+φ(x) = ∑_{i=0}^{N-1} a_i φ(2x-i)
+</script>
+which means for the connection coefficients using the chain rule
+<script type="math/tex; mode=display">\begin{align}
+Λ_{l,m}^d =& ∫_{-∞}^∞ φ^{d_1}(x) φ^{(d_2)}_l(x) φ^{(d_3)}_m(x) dx \\
+      =& ∫_{-∞}^∞
+          \left(\frac{d}{dx}\right)^{d_1} ∑_{i=0}^{N-1} a_i φ(2x    -i) \\
+        & × \left(\frac{d}{dx}\right)^{d_2} ∑_{j=0}^{N-1} a_j φ(2(x-l)-j) \\
+        & × \left(\frac{d}{dx}\right)^{d_3} ∑_{k=0}^{N-1} a_k φ(2(x-m)-k) dx \\
+      =& ∑_{i,j,k=0}^{N-1} a_i a_j a_k ∫_{-∞}^∞
+                   2^{d_1} φ^{(d_1)}(2x-i) 2^{d_2} φ^{(d_2)}(2x-2l-j) 2^{d_3} φ^{(d_3)}(2x-2m-k) dx \\
+      =& 2^d ∑_{i,j,k=0}^{N-1} a_i a_j a_k ∫_{-∞}^∞
+                   φ^{(d_1)}(2x-i) φ^{(d_2)}(2x-2l-j) φ^{(d_3)}(2x-2m-k) dx \\
+\end{align}</script>
+with <script type="math/tex">d = d_1 + d_2 + d_3</script>.</p>
+<p>Using a change of variables <script type="math/tex">2x ↦ x</script> and remembering <script type="math/tex">∫ f(2x) = \frac{1}{2} ∫ f(x) dx</script>
+we find 
+<script type="math/tex; mode=display">\begin{align}
+=& \frac{1}{2} 2^d ∑_{i,j,k=0}^{N-1} a_i a_j a_k ∫_{-∞}^∞
+             φ^{(d_1)}(x-i) φ^{(d_2)}(x-2l-j) φ^{(d_3)}(x-2m-k) dx \\
+=& 2^{d-1} ∑_{i,j,k=0}^{N-1} a_i a_j a_k ∫_{-∞}^∞
+             φ^{(d_1)}(x) φ^{(d_2)}(x-2l-j+i) φ^{(d_3)}(x-2m-k+i) dx \\
+=& 2^{d-1} ∑_{i,j,k=0}^{N-1} a_i a_j a_k ∫_{-∞}^∞
+             φ^{(d_1)}(x) φ^{(d_2)}_{2l+j-i}(x) φ^{(d_3)}_{2m+k-i}(x) dx \\
+=& 2^{d-1} ∑_{i,j,k=0}^{N-1} a_i a_j a_k Λ_{2l+j-i,2m+k-i}^{d_1,d_2,d_3}. \\
+\end{align}</script>
+</p>
+<p>This gives a system of <script type="math/tex">XXX</script> equations of the form
+<script type="math/tex; mode=display">
+(A - 2^{1-d} I) Λ^{d_1,d_2,d_3} = T Λ^{d_1,d_2,d_3} = 0
+</script>
+where <script type="math/tex">A_{l,m;2l+j-i,2m+k-i} = ∑_{i,j,k=0}^{N-1} a_i a_j a_k</script>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">)])</span>
+    
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span><span class="n">m</span> <span class="ow">in</span> <span class="n">Tindices</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">l</span><span class="o">+</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">m</span><span class="o">+</span><span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Tindices</span><span class="p">:</span>
+                <span class="k">continue</span> <span class="c"># skip the Λ which are zero anyway</span>
+            <span class="n">T</span><span class="p">[</span><span class="n">idx</span><span class="p">(</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">),</span> <span class="n">idx</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">l</span><span class="o">+</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">m</span><span class="o">+</span><span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">a</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">*</span><span class="n">a</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+    <span class="n">T</span> <span class="o">-=</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">d</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">))</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">)])</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <h2>Consequences of Moment Equations</h2>
+<p>If we differentiate the moment equation
+<script type="math/tex; mode=display">
+x^q = ∑_{i=-∞}^∞ M_i^q φ_i (x)
+</script>
+<script type="math/tex">d_1</script> times with <script type="math/tex">q < d_1</script>, we yield the equation
+<script type="math/tex; mode=display">
+0 = ∑_{i=-∞}^∞ M_i^q φ^{(d_1)}_i(x).
+</script>
+Then multiplying by <script type="math/tex">φ_j^{(d_2)} φ_k^{(d_3)}</script> for some fixed <script type="math/tex">j,k</script>,
+and integrating, we gain
+<script type="math/tex; mode=display">\begin{align}
+0 &= ∑_{i=-∞}^∞ M_i^q ∫_{-∞}^∞ φ^{(d_1)}_i(x) φ^{(d_2)}_j(x) φ^{d_3}_k(x) \\
+  &= ∑_{i=-∞}^∞ M_i^q ∫_{-∞}^∞ φ^{(d_1)}(x-i) φ^{(d_2)}(x-j) φ^{d_3}(x-k).
+\end{align}</script>
+Finally, we perform a change of variables <script type="math/tex">x-i ↦ x</script>
+<script type="math/tex; mode=display">\begin{align}
+  &= ∑_{i=-∞}^∞ M_i^q ∫_{-∞}^∞ φ^{(d_1)}(x) φ^{(d_2)}(x-j+i) φ^{(d_3)}(x-k+i) \\
+  &= ∑_{i=-∞}^∞ M_i^q Λ^{d_1,d_2,d_3}_{j-i,k-i} \\
+  &= ∑_{i=-(N-2)}^{N-2} M_i^q Λ^{d_1,d_2,d_3}_{j-i,k-i}. \\
+\end{align}</script>
+Similar equations hold for <script type="math/tex">φ_j^{(d_2)}</script> and <script type="math/tex">φ_k^{(d_3)}</script>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">d1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">)])</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="p">(</span><span class="n">d2</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="p">(</span><span class="n">d3</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)</span> <span class="ow">in</span> <span class="n">Tindices</span><span class="p">:</span>
+                <span class="n">M</span><span class="p">[</span><span class="n">q</span><span class="p">,</span> <span class="n">idx</span><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">moment</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">T</span><span class="p">,</span><span class="n">M</span><span class="p">])</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">b</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">d1</span><span class="p">])])</span>
+
+    <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">d2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">)])</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="p">(</span><span class="n">d1</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="p">(</span><span class="n">d3</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d2</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)</span> <span class="ow">in</span> <span class="n">Tindices</span><span class="p">:</span>
+                <span class="n">M</span><span class="p">[</span><span class="n">q</span><span class="p">,</span> <span class="n">idx</span><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">moment</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">A</span><span class="p">,</span><span class="n">M</span><span class="p">])</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">b</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">d2</span><span class="p">])])</span>
+
+    <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">d3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">)])</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="p">(</span><span class="n">d1</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="p">(</span><span class="n">d2</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d3</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)</span> <span class="ow">in</span> <span class="n">Tindices</span><span class="p">:</span>
+                <span class="n">M</span><span class="p">[</span><span class="n">q</span><span class="p">,</span> <span class="n">idx</span><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">moment</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">A</span><span class="p">,</span><span class="n">M</span><span class="p">])</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">b</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">d3</span><span class="p">])])</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <h2>Normalization of the Coefficients</h2>
+<p>Finally we differentiate the moment equation
+<script type="math/tex; mode=display">
+x^{d_1} = ∑_{i=-∞}^∞ M_i^{d_1} φ_i (x)
+</script>
+<script type="math/tex">d_1</script> times, yielding
+<script type="math/tex; mode=display">
+d_1! = ∑_{i=-∞}^∞ M_i^{d_1} φ_i^{(d_1)} (x).
+</script>
+Similar equations hold for <script type="math/tex">φ_j</script> and <script type="math/tex">φ_k</script>.
+Multiplying these equations and integrating gains
+<script type="math/tex; mode=display">
+d_1!d_2!d_3! = ∑_{i,j,k=-∞}^∞ M_i^{d_1} M_j^{d_2} M_k^{d_3}
+                 ∫_{-∞}^∞ φ_i^{(d_1)}(x) φ_j^{(d_2)}(x) φ_k^{(d_3)}(x) dx.
+</script>
+Again with a change of variables <script type="math/tex">x-i ↦ x</script> this yields
+<script type="math/tex; mode=display">\begin{align}
+d_1!d_2!d_3! &= ∑_{i,j,k=-∞}^∞ M_i^{d_1} M_j^{d_2} M_k^{d_3}
+                  ∫_{-∞}^∞ φ^{(d_1)}(x) φ_{j-i}^{(d_2)}(x) φ_{k-i}^{(d_3)}(x) dx \\
+             &= ∑_{i,j,k=-∞}^∞ M_i^{d_1} M_j^{d_2} M_k^{d_3}
+                  Λ^{d_1,d_2,d_3}_{j-i,k-i} \\
+             &= ∑_{i,j,k=-(N-2)}^{N-2} M_i^{d_1} M_j^{d_2} M_k^{d_3}
+                  Λ^{d_1,d_2,d_3}_{j-i,k-i}.
+\end{align}</script>
+</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">)])</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">k</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)</span> <span class="ow">in</span> <span class="n">Tindices</span><span class="p">:</span>
+            <span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">idx</span><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">moment</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">d2</span><span class="p">)</span><span class="o">*</span><span class="n">moment</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">d3</span><span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">A</span><span class="p">,</span><span class="n">M</span><span class="p">])</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">b</span><span class="p">,</span> <span class="p">[</span><span class="n">factorial</span><span class="p">(</span><span class="n">d1</span><span class="p">)</span><span class="o">*</span><span class="n">factorial</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span><span class="o">*</span><span class="n">factorial</span><span class="p">(</span><span class="n">d3</span><span class="p">)]])</span>
+
+    <span class="n">Λ</span><span class="p">,</span> <span class="n">residuals</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">singular_values</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">residuals</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;Residuals {} of connection coefficients exceed 10**-30!&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">residuals</span><span class="p">)</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">idx</span><span class="p">,</span> <span class="n">Tindices</span><span class="p">,</span> <span class="n">Λ</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">test_cc3</span> <span class="k">import</span> <span class="n">cc3_100</span>
+    <span class="n">idx</span><span class="p">,</span> <span class="n">Tindices</span><span class="p">,</span> <span class="n">Λ</span> <span class="o">=</span> <span class="n">threeterm_connection_coefficients</span><span class="p">(</span><span class="n">db3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">db3</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">l</span><span class="p">,</span><span class="n">m</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">Λ</span><span class="p">[</span><span class="n">idx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">)]</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">l</span><span class="o">-</span><span class="n">m</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">cc3_100</span><span class="p">[(</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">)]</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="o">-</span><span class="n">b</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">b</span> <span class="k">if</span> <span class="n">b</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="k">if</span> <span class="n">__name__</span>  <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">test</span><span class="p">()</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  config: ["MMLorHTML.js"],
+  jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+  extensions: ["MathMenu.js", "MathZoom.js"]
+});
+</script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script>
+    
