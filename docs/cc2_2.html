@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>cc2_2.py</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>cc2_2.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      <p>This file computes the fundamental 2-term connection coefficients</p>
+<p>
+<script type="math/tex; mode=display">
+Λ_l^d = ∫_{-∞}^∞ φ(x) φ^{(d)}_l(x) dx
+</script>
+</p>
+<p>with <script type="math/tex">-(N-1) < l < N-1</script>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.misc</span> <span class="k">import</span> <span class="n">factorial</span>
+
+<span class="kn">from</span> <span class="nn">moments</span> <span class="k">import</span> <span class="n">moment</span>
+<span class="kn">from</span> <span class="nn">scaling_coefficients</span> <span class="k">import</span> <span class="n">db3</span><span class="p">,</span> <span class="n">daubechies_wavelets</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <h2>Restriction to Fundamental Connection Coefficients</h2>
+<p><a name="fundamental_cc"></a></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">twoterm_connection_coefficients</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>The 2-term connection coefficients are defined as
+<script type="math/tex; mode=display">
+Λ_{i,j}^{d_1,d_2} = ∫^∞_{-∞} \frac{d^{d_1}}{dx^{d_1}} φ_i(x) \frac{d^{d_2}}{dx^{d_2}} φ_j(x) dx
+</script>
+which can be transformed by a change of variable with <script type="math/tex">l=j-i</script> to
+<script type="math/tex; mode=display">\begin{align}
+=& ∫^∞_{-∞} φ^{(d_1)}(x-i) φ^{(d_2)}(x-j) dx \\
+=& ∫^∞_{-∞} φ^{(d_1)}(x) φ^{(d_2)}_l(x) dx \\
+=& Λ_l^{d_1,d_2}.
+\end{align}</script>
+Using integration by parts this can be generalized to the fundamental connection coefficients
+<script type="math/tex; mode=display">
+= (-1)^{d_1} ∫^∞_{-∞} φ(x) φ^{(d)}_l(x) dx = (-1)^{d_1} Λ_l^d
+</script>
+with <script type="math/tex">d = d_1 + d_2</script>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">d</span> <span class="o">=</span> <span class="n">d1</span> <span class="o">+</span> <span class="n">d2</span>
+
+    <span class="n">idx</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">Λ</span> <span class="o">=</span> <span class="n">fundamental_twoterm_connection_coefficients</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+    <span class="n">Λ</span> <span class="o">*=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="n">d1</span>
+
+    <span class="n">idx2</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">:</span> <span class="n">idx</span><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">idx2</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">Λ</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <h1>Calculation of Fundamental Connection Coefficients</h1>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">fundamental_twoterm_connection_coefficients</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Our wavelet has <script type="math/tex">N=2g</script> non-zero scaling coefficients where <script type="math/tex">g</script> is the genus.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">N</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">size</span> 
+    <span class="n">aindices</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>The fundamental connection coefficients <script type="math/tex">Λ_l^d</script> are just non-zero for <script type="math/tex">-(N-1) < l < N-1</script>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">Tindices</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">Tindices</span><span class="o">.</span><span class="n">index</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>The Daubechies wavelet of genus <script type="math/tex">g=N/2</script> has just as many vanishing moments and
+we must not calculate higher derivatives than <script type="math/tex">d < g</script>!</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="k">if</span> <span class="n">d</span> <span class="o">&gt;=</span> <span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;Calculation of connection coefficients for d &gt; g = N/2 is invalid!&#39;</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <h2>Consequences of Compactness</h2>
+<p>We exploit the fact that
+<script type="math/tex; mode=display">
+φ(x) = ∑_{i=0}^{N-1} a_i φ(2x-i)
+</script>
+which means for the connection coefficients using the chain rule
+<script type="math/tex; mode=display">\begin{align}
+Λ_l^d =& ∫_{-∞}^∞ φ(x) φ^{(d)}_l(x) dx \\
+      =& ∫_{-∞}^∞ ∑_{i=0}^{N-1} a_i φ(2x-i)
+          \left(\frac{d}{dx}\right)^d ∑_{j=0}^{N-1} a_j φ(2(x-l)-j) dx \\
+      =& ∑_{i,j=0}^{N-1} a_i a_j ∫_{-∞}^∞ φ(2x-i) 2^d φ^{(d)}(2x-2l-j) dx \\
+\end{align}</script>
+Using a change of variables <script type="math/tex">2x ↦ x</script> and remembering <script type="math/tex">∫ f(2x) = \frac{1}{2} ∫ f(x) dx</script>
+we find 
+<script type="math/tex; mode=display">\begin{align}
+=& \frac{1}{2} 2^d ∑_{i,j=0}^{N-1} a_i a_j ∫_{-∞}^∞ φ(x-i) φ^{(d)}(x-2l-j) dx \\
+=& 2^{d-1} ∑_{i,j=0}^{N-1} a_i a_j ∫_{-∞}^∞ φ(x) φ^{(d)}(x+i-2l-j) dx \\
+=& 2^{d-1} ∑_{i,j=0}^{N-1} a_i a_j ∫_{-∞}^∞ φ(x) φ_{2l+j-i}^{(d)}(x) dx \\
+=& 2^{d-1} ∑_{i,j=0}^{N-1} a_i a_j Λ_{2l+j-i}^d. \\
+\end{align}</script>
+</p>
+<p>This gives a system of <script type="math/tex">2(N-2)+1</script> equations of the form
+<script type="math/tex; mode=display">
+(A - 2^{1-d} I) Λ^d = T Λ^d = 0
+</script>
+where <script type="math/tex">A_{l,2l+j-i} = ∑_{i,j=0}^{N-1} a_i a_j</script>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">)])</span>
+    
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+            <span class="k">if</span> <span class="mi">2</span><span class="o">*</span><span class="n">l</span><span class="o">+</span><span class="n">j</span><span class="o">-</span><span class="n">i</span> <span class="ow">in</span> <span class="n">Tindices</span><span class="p">:</span> <span class="c"># skip the Λ^d which are zero</span>
+                <span class="n">T</span><span class="p">[</span><span class="n">idx</span><span class="p">(</span><span class="n">l</span><span class="p">),</span> <span class="n">idx</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">l</span><span class="o">+</span><span class="n">j</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">a</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+    <span class="n">T</span> <span class="o">-=</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">d</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">))</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">)])</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <h2>Normalization of the Coefficients</h2>
+<p>The afore mentioned system of equations <script type="math/tex">TΛ^d</script> is homogenous, so we need
+a set non-homogenous equations to fix the numerical values of the
+connection coefficients.
+We do this using the moment equation
+<script type="math/tex; mode=display">
+M_i^k = ∫_{-∞}^∞ x^k φ(x-i) dx.
+</script>
+If our wavelet has at least <script type="math/tex">q < d</script> vanishing moments, then for each <script type="math/tex">q</script>
+there exist <script type="math/tex">M_i^q</script> moments such that
+<script type="math/tex; mode=display">
+x^q = ∑_{i=-∞}^∞ M_i^q φ(x-i).
+</script>
+TODO: Why?
+Differentiating <script type="math/tex">d</script> times and remembering that <script type="math/tex">φ(x)</script> has compact support
+we derive
+<script type="math/tex; mode=display">
+d! = ∑_{i=-∞}^∞ M_i^d φ^{(d)}(x-i)
+</script>
+and finally we multiply by <script type="math/tex">φ(x)</script>, resulting in
+<script type="math/tex; mode=display">\begin{align}
+ d! ∫_{-∞}^∞ φ(x) dx =& ∫_{-∞}^∞ φ(x) ∑_{i=-∞}^∞ M_i^d φ^{(d)}(x-i) dx \\
+                  d! =& ∑_{i=-∞}^∞ M_i^d ∫_{-∞}^∞ φ(x) φ^{(d)}(x-i) dx \\
+                  d! =& ∑_{i=-∞}^∞ M_i^d Λ_i^d dx \\
+                  d! =& ∑_{i=-(N-2)}^{N-2} M_i^d Λ_i^d dx. \\
+\end{align}</script>
+</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Tindices</span><span class="p">)])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Tindices</span><span class="p">:</span>
+        <span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">idx</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">moment</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p>Now there exists a unique solution of this system of equations which
+are our fundamental connection coefficients <script type="math/tex">Λ_l^d</script>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">T</span><span class="p">,</span> <span class="n">M</span><span class="p">])</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">factorial</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+    <span class="n">Λ</span><span class="p">,</span> <span class="n">residuals</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">singular_values</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">residuals</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;Residuals of connection coefficients exceed 10**-30!&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">idx</span><span class="p">,</span> <span class="n">Tindices</span><span class="p">,</span> <span class="n">Λ</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <h1>Validation of Correctness</h1>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      <h2>Skew Symmetry</h2>
+<p><a name="skew_symmetry"></a></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">test_skew_symmetry</span><span class="p">():</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      <p>Using integration by parts and a change of variables we can show easily
+a skew symmetry of the connection coefficients if <script type="math/tex">d</script> is odd.
+<script type="math/tex; mode=display">\begin{align}
+Λ^d_l &=        ∫_{-∞}^∞ φ(x) φ^{(d)}_l(x) dx \\
+      &= (-1)^d ∫_{-∞}^∞ φ^{(d)}(x) φ(x-l) dx \\
+      &= (-1)^d ∫_{-∞}^∞ φ^{(d)}(x+l) φ(x) dx \\
+      &= (-1)^d ∫_{-∞}^∞ φ^{(d)}_{-l}(x) φ(x) dx \\
+      &= (-1)^d Λ^d_{-l} \\
+\end{align}</script>
+</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="k">for</span> <span class="n">genus</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">daubechies_wavelets</span><span class="p">[</span><span class="n">genus</span><span class="p">]</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      <p>The Daubechies wavelet of genus <script type="math/tex">g</script> has just as many vanishing moments
+and we must not calculate higher derivatives than <script type="math/tex">d < g</script>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">genus</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">idx</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">Λ</span> <span class="o">=</span> <span class="n">twoterm_connection_coefficients</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d1</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">d2</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">Λpositive</span> <span class="o">=</span> <span class="p">[</span>        <span class="n">Λ</span><span class="p">[</span><span class="n">idx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">+</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+            <span class="n">Λnegative</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="n">d</span><span class="o">*</span><span class="n">Λ</span><span class="p">[</span><span class="n">idx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+
+            <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_almost_equal</span><span class="p">(</span><span class="n">Λpositive</span><span class="p">,</span> <span class="n">Λnegative</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
+      </div>
+      <h2>Validate for <script type="math/tex">d = 1</script>
+</h2>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">test_cc2_10</span><span class="p">():</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-16'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-16'>#</a>
+      </div>
+      <p>The fundamental 2-term connection coefficients for <script type="math/tex">d = 1</script>
+according to Resnikoff, page 249, Table 10.1.</p>
+<p>Denotes only <script type="math/tex">Λ^1_l</script> for <script type="math/tex">l > -1</script> because of <a href="#skew_symmetry">skew symmetry</a>
+<script type="math/tex">Λ^1_l = -Λ^1_{-l}</script>.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">Λexpected</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="p">(</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="o">-</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span>
+             <span class="mi">1</span><span class="o">/</span><span class="mi">12</span><span class="p">),</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span>
+           <span class="o">-</span><span class="mf">0.745205</span><span class="p">,</span>
+            <span class="mf">0.145205</span><span class="p">,</span>
+           <span class="o">-</span><span class="mf">0.0146119</span><span class="p">,</span>
+           <span class="o">-</span><span class="mf">0.000342466</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="k">for</span> <span class="n">genus</span> <span class="ow">in</span> <span class="n">Λexpected</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">daubechies_wavelets</span><span class="p">[</span><span class="n">genus</span><span class="p">]</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+        <span class="n">idx</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">Λactual</span> <span class="o">=</span> <span class="n">twoterm_connection_coefficients</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">d2</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">Λactual</span> <span class="o">=</span> <span class="p">[</span><span class="n">Λactual</span><span class="p">[</span><span class="n">idx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+
+        <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_almost_equal</span><span class="p">(</span><span class="n">Λactual</span><span class="p">,</span> <span class="n">Λexpected</span><span class="p">[</span><span class="n">genus</span><span class="p">],</span> <span class="n">decimal</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-17'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-17'>#</a>
+      </div>
+      <h2>Validate for <script type="math/tex">d = 2</script>
+</h2>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">test_cc2_20</span><span class="p">():</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-18'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-18'>#</a>
+      </div>
+      <p>The fundamental 2-term connection coefficients for <script type="math/tex">d = 2</script>
+according to Resnikoff, page 264, Table 10.4.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">Λexpected</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="o">-</span><span class="mf">5.26785714285743</span><span class="p">,</span>
+        <span class="o">+</span><span class="mf">3.39047610947638</span><span class="p">,</span>
+        <span class="o">-</span><span class="mf">0.87619047619052</span><span class="p">,</span>
+        <span class="o">+</span><span class="mf">0.11428571428571</span><span class="p">,</span>
+        <span class="o">+</span><span class="mf">0.00535714285714</span><span class="p">,</span>
+    <span class="p">]</span>
+    
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">db3</span><span class="p">)</span>
+    <span class="n">idx</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">Λactual</span> <span class="o">=</span> <span class="n">twoterm_connection_coefficients</span><span class="p">(</span><span class="n">db3</span><span class="p">,</span> <span class="n">d1</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">d2</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">Λpositive</span> <span class="o">=</span> <span class="p">[</span><span class="n">Λactual</span><span class="p">[</span><span class="n">idx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_almost_equal</span><span class="p">(</span><span class="n">Λpositive</span><span class="p">,</span> <span class="n">Λexpected</span><span class="p">)</span>
+
+    <span class="n">Λnegative</span> <span class="o">=</span> <span class="p">[</span><span class="n">Λactual</span><span class="p">[</span><span class="n">idx</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">+</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_almost_equal</span><span class="p">(</span><span class="n">Λnegative</span><span class="p">,</span> <span class="n">Λexpected</span><span class="p">)</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  config: ["MMLorHTML.js"],
+  jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+  extensions: ["MathMenu.js", "MathZoom.js"]
+});
+</script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script>
+    
